@@ -26,7 +26,45 @@ public class SpotifyProvider
         _spotifyClient = new SpotifyClient(config);
     }
 
+    public async Task<List<SongDto>> GetLinksByAlbum(string findValue)
+    {
+        var playlist = await _spotifyClient.Albums.Get(findValue);
+        var tracks = await _spotifyClient.PaginateAll(playlist.Tracks);
+        List<SongDto> urls = new List<SongDto>();
+        var tasks = tracks.Select(async trackItem =>
+        {
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+            
+                    using var httpClient = new HttpClient();
+                    YoutubeSearchClient client = new YoutubeSearchClient(httpClient);
+                    var responseObject = await client.SearchAsync(trackItem.QueryStringUtube());
+                    urls.Add(new SongDto()
+                    {
+                        UrlUtube = responseObject.Results.First().Url,
+                        Name = trackItem.Name,
+                        ImageUrl = "",
+                        DurationS = trackItem.DurationMs*1000,
+                        Artists = trackItem.Artists.Select(x => x.Name).ToArray()
+                    });
+                    Console.WriteLine(responseObject.Results.First().Url);
+                
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+        });
+        await Task.WhenAll(tasks.ToList());
 
+        return urls;
+    }
+    
     public async Task<List<SongDto>> GetLinks(string findValue)
     {
         var playlist = await _spotifyClient.Playlists.Get(findValue);

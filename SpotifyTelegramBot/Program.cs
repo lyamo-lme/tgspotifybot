@@ -2,7 +2,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-var botClient = new TelegramBotClient("5865735507:AAHuLANbrOdS5956v8dMR9RarO9bx4Bq4Fc");
+var botClient = new TelegramBotClient("");
 
 botClient.SetMyCommandsAsync(new List<BotCommand>
 {
